@@ -1,0 +1,6 @@
+.DS_Store
+.vscode
+vendor/
+data/
+enron_mail_20110402/
+enron_mail_20110402.tgz
