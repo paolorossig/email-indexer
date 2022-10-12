@@ -1,5 +1,10 @@
 package domain
 
+const (
+	// EmailsRootFolder is the root folder for the emails
+	EmailsRootFolder = "./enron_mail_20110402/maildir"
+)
+
 // Email is the struct for the email
 type Email struct {
 	MessageID string `json:"message_id"`
@@ -8,4 +13,5 @@ type Email struct {
 	To        string `json:"to"`
 	Subject   string `json:"subject"`
 	Content   string `json:"content"`
+	Filepath  string `json:"filepath"`
 }

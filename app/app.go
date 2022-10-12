@@ -1,40 +1,60 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/paolorossig/go-challenge/adapter/zincsearch"
 	"github.com/paolorossig/go-challenge/handler"
 	"github.com/paolorossig/go-challenge/service"
 )
 
+const (
+	defaultPort = "4000"
+)
+
 // App describes the application.
 type App struct {
-	Router       *chi.Mux
+	Server       *chi.Mux
+	httpClient   *http.Client
 	dependencies *dependencies
 }
 
 // dependencies has the data for the application dependency injection
 type dependencies struct {
+	emailHandler   *handler.EmailHandler
 	indexerHandler *handler.IndexerHandler
 }
 
+func (a *App) setupInfrastructure() {
+	a.httpClient = &http.Client{}
+}
+
 func (a *App) setupDependencies() {
-	a.dependencies = &dependencies{}
-	indexerService := service.NewIndexerService()
-	indexerHandler := handler.NewIndexerHandler(indexerService)
-	a.dependencies.indexerHandler = indexerHandler
+	emailService := service.NewEmailService()
+	emailHandler := handler.NewEmailHandler(emailService)
+
+	zincSearchAdapter := zincsearch.NewClient(a.httpClient)
+	indexerService := service.NewIndexerService(zincSearchAdapter)
+	indexerHandler := handler.NewIndexerHandler(indexerService, emailService)
+
+	a.dependencies = &dependencies{
+		emailHandler:   emailHandler,
+		indexerHandler: indexerHandler,
+	}
 }
 
 func (a *App) setupServer() {
-	a.Router = chi.NewRouter()
-	a.Router.Use(middleware.RequestID)
-	a.Router.Use(middleware.Logger)
-	a.Router.Use(middleware.Recoverer)
-	a.Router.Use(middleware.URLFormat)
-	a.Router.Use(render.SetContentType(render.ContentTypeJSON))
+	a.Server = chi.NewRouter()
+	a.Server.Use(middleware.RequestID)
+	a.Server.Use(middleware.Logger)
+	a.Server.Use(middleware.Recoverer)
+	a.Server.Use(middleware.URLFormat)
+	a.Server.Use(render.SetContentType(render.ContentTypeJSON))
 
 	a.SetupRoutes()
 }
@@ -42,6 +62,7 @@ func (a *App) setupServer() {
 // NewApp loads the infrastructure and dependencies of the app.
 func NewApp() *App {
 	a := &App{}
+	a.setupInfrastructure()
 	a.setupDependencies()
 	a.setupServer()
 
@@ -50,7 +71,14 @@ func NewApp() *App {
 
 // StartApp loads the application with its routes.
 func (a *App) StartApp() {
-	if err := http.ListenAndServe(":4000", a.Router); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
+	}
+
+	fmt.Printf("App is running on: http://localhost:%s ...\n", port)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), a.Server); err != nil {
 		panic(err)
 	}
 }
