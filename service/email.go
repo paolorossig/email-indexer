@@ -45,13 +45,13 @@ func (es *EmailService) GetAvailableUsers() ([]string, error) {
 func (es *EmailService) ProcessEmailFile(filepathString string) (*domain.Email, error) {
 	file, err := os.ReadFile(filepath.Clean(filepathString))
 	if err != nil {
-		fmt.Println("Error reading file")
+		log.Println("Error in ProcessEmailFile - reading file: ", err)
 		return nil, err
 	}
 
 	arr := strings.SplitN(string(file), emailDetailsContentSeparator, 2)
 	if len(arr) != 2 {
-		fmt.Printf("Wrong email file found at %s\n", filepathString)
+		log.Println("Error in ProcessEmailFile - Wrong email file found at: ", filepathString)
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (es *EmailService) ExtrackEmailsFromUser(userID string) ([]domain.Email, er
 
 	err := filepath.Walk(userFolderPath, es.visitAndProcessEmailFiles(&emails))
 	if err != nil {
-		panic(err)
+		log.Println("Error in ExtrackEmailsFromUser: ", err)
 	}
 
 	return emails, nil
@@ -108,7 +108,7 @@ func (es *EmailService) ExtrackEmailsFromUser(userID string) ([]domain.Email, er
 func (es *EmailService) visitAndProcessEmailFiles(emails *[]domain.Email) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Error in visitAndProcessEmailFiles: ", err)
 		}
 
 		if !info.IsDir() {

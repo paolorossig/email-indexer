@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/paolorossig/go-challenge/adapter/zincsearch"
 )
@@ -30,7 +30,7 @@ func (is *IndexerService) IndexEmails(indexName string, records interface{}) err
 		return err
 	}
 
-	fmt.Printf("Created %d documents\n", res.RecordCount)
+	log.Printf("Indexed %d documents\n", res.RecordCount)
 
 	return nil
 }
