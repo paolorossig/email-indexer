@@ -26,7 +26,7 @@ type getAvailableUsers struct {
 
 // GetAvailableUsers is the method that returns the available users
 func (eh *EmailHandler) GetAvailableUsers(w http.ResponseWriter, r *http.Request) {
-	records, err := eh.emailService.GetFileNamesInFolder(domain.EmailsRootFolder)
+	records, err := eh.emailService.GetAvailableUsers()
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, NewErrResponse(err))

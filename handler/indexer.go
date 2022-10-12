@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
-	"github.com/paolorossig/go-challenge/domain"
 )
 
 const (
@@ -27,7 +26,7 @@ func NewIndexerHandler(is IndexerService, es EmailService) *IndexerHandler {
 
 // IndexEmails is the method that indexes the emails
 func (ih *IndexerHandler) IndexEmails(w http.ResponseWriter, r *http.Request) {
-	users, err := ih.emailService.GetFileNamesInFolder(domain.EmailsRootFolder)
+	userIDs, err := ih.emailService.GetAvailableUsers()
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, NewErrResponse(err))
@@ -37,7 +36,7 @@ func (ih *IndexerHandler) IndexEmails(w http.ResponseWriter, r *http.Request) {
 	// TODO: Waitgroup here!
 
 	for i := 0; i <= 5; i++ {
-		userID := users[i]
+		userID := userIDs[i]
 
 		emailRecords, err := ih.emailService.ExtrackEmailsFromUser(userID)
 		if err != nil {

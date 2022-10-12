@@ -23,17 +23,19 @@ func NewEmailService() *EmailService {
 	return &EmailService{}
 }
 
-// GetFileNamesInFolder returns the file names in a folder
-func (es *EmailService) GetFileNamesInFolder(folder string) ([]string, error) {
+// GetAvailableUsers returns the User IDs available
+func (es *EmailService) GetAvailableUsers() ([]string, error) {
 	var records []string
 
-	files, err := os.ReadDir(folder)
+	files, err := os.ReadDir(domain.EmailsRootFolder)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, f := range files {
-		records = append(records, f.Name())
+		if f.IsDir() {
+			records = append(records, f.Name())
+		}
 	}
 
 	return records, nil

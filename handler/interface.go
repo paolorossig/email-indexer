@@ -4,7 +4,7 @@ import "github.com/paolorossig/go-challenge/domain"
 
 // EmailService is the interface for the EmailService
 type EmailService interface {
-	GetFileNamesInFolder(folder string) ([]string, error)
+	GetAvailableUsers() ([]string, error)
 	ExtrackEmailsFromUser(userID string) ([]domain.Email, error)
 }
 
