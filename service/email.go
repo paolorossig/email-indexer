@@ -2,7 +2,8 @@ package service
 
 import (
 	"fmt"
-	"io/ioutil"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -26,7 +27,7 @@ func NewEmailService() *EmailService {
 func (es *EmailService) GetFileNamesInFolder(folder string) ([]string, error) {
 	var records []string
 
-	files, err := ioutil.ReadDir(folder)
+	files, err := os.ReadDir(folder)
 	if err != nil {
 		return nil, err
 	}
@@ -38,42 +39,37 @@ func (es *EmailService) GetFileNamesInFolder(folder string) ([]string, error) {
 	return records, nil
 }
 
-// ExtrackEmailsFromFilesInFolder extracts emails from files in a folder
-func (es *EmailService) ExtrackEmailsFromFilesInFolder(folder string) ([]domain.Email, error) {
-	var records []domain.Email
-
-	files, err := ioutil.ReadDir(folder)
+// ProcessEmailFile processes an email file and returns an Email
+func (es *EmailService) ProcessEmailFile(filepathString string) (*domain.Email, error) {
+	file, err := os.ReadFile(filepath.Clean(filepathString))
 	if err != nil {
+		fmt.Println("Error reading file")
 		return nil, err
 	}
 
-	for _, f := range files {
-		filePathString := fmt.Sprintf("%s/%s", folder, f.Name())
-		file, err := ioutil.ReadFile(filepath.Clean(filePathString))
-		if err != nil {
-			return nil, err
-		}
-
-		arr := strings.Split(string(file), emailDetailsContentSeparator)
-		allDetails, content := arr[0], arr[1]
-
-		detailsArr := strings.Split(allDetails, emailDetailSeparator)
-
-		email := mapEmailDetails(detailsArr)
-		email.Content = content
-		email.Filepath = filePathString
-
-		records = append(records, *email)
+	arr := strings.SplitN(string(file), emailDetailsContentSeparator, 2)
+	if len(arr) != 2 {
+		fmt.Printf("Wrong email file found at %s\n", filepathString)
+		return nil, err
 	}
 
-	return records, nil
+	allDetails, content := arr[0], arr[1]
+
+	detailsArr := strings.Split(allDetails, emailDetailSeparator)
+
+	email := mapEmailDetails(detailsArr)
+	email.Content = content
+	email.Filepath = filepathString
+
+	return email, nil
+
 }
 
 func mapEmailDetails(details []string) *domain.Email {
 	email := &domain.Email{}
 
 	for i := 0; i < len(details); i++ {
-		keyValue := strings.Split(details[i], ": ")
+		keyValue := strings.SplitN(details[i], ": ", 2)
 		switch keyValue[0] {
 		case "Message-ID":
 			email.MessageID = keyValue[1]
@@ -95,23 +91,33 @@ func mapEmailDetails(details []string) *domain.Email {
 
 // ExtrackEmailsFromUser extracts emails from a user
 func (es *EmailService) ExtrackEmailsFromUser(userID string) ([]domain.Email, error) {
-	var records []domain.Email
+	var emails []domain.Email
 
 	userFolderPath := fmt.Sprintf("%s/%s", domain.EmailsRootFolder, userID)
-	innerFolders, err := es.GetFileNamesInFolder(userFolderPath)
+
+	err := filepath.Walk(userFolderPath, es.visitAndProcessEmailFiles(&emails))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	for _, innerFolder := range innerFolders {
-		filePath := fmt.Sprintf("%s/%s", userFolderPath, innerFolder)
-		emails, err := es.ExtrackEmailsFromFilesInFolder(filePath)
+	return emails, nil
+}
+
+func (es *EmailService) visitAndProcessEmailFiles(emails *[]domain.Email) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			continue
+			log.Fatal(err)
 		}
 
-		records = append(records, emails...)
-	}
+		if !info.IsDir() {
+			email, err := es.ProcessEmailFile(path)
+			if err != nil || email == nil {
+				return nil
+			}
 
-	return records, nil
+			*emails = append(*emails, *email)
+		}
+
+		return nil
+	}
 }
