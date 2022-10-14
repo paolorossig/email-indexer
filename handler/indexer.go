@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"log"
 	"net/http"
+	"sync"
 
 	"github.com/go-chi/render"
 )
@@ -33,24 +35,27 @@ func (ih *IndexerHandler) IndexEmails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Waitgroup here!
+	var wg sync.WaitGroup
 
-	for i := 0; i <= 5; i++ {
-		userID := userIDs[i]
-
-		emailRecords, err := ih.emailService.ExtrackEmailsFromUser(userID)
-		if err != nil {
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, NewErrResponse(err))
-			return
-		}
-
-		if err := ih.indexerService.IndexEmails(emailIndexName, emailRecords); err != nil {
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, NewErrResponse(err))
-			return
-		}
+	for _, userID := range userIDs {
+		wg.Add(1)
+		go ih.indexEmailByUserID(userID, &wg)
 	}
 
+	wg.Wait()
+
 	render.Status(r, http.StatusNoContent)
+}
+
+func (ih *IndexerHandler) indexEmailByUserID(userID string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	emailRecords, err := ih.emailService.ExtrackEmailsFromUser(userID)
+	if err != nil {
+		log.Println("Error extracting emails from user: ", err)
+		return
+	}
+
+	if err := ih.indexerService.IndexEmails(emailIndexName, emailRecords); err != nil {
+		log.Println("Error indexing emails from user: ", err)
+	}
 }
