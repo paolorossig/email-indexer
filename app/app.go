@@ -35,10 +35,11 @@ func (a *App) setupInfrastructure() {
 }
 
 func (a *App) setupDependencies() {
-	emailService := service.NewEmailService()
+	zincSearchAdapter := zincsearch.NewClient(a.httpClient)
+
+	emailService := service.NewEmailService(zincSearchAdapter)
 	emailHandler := handler.NewEmailHandler(emailService)
 
-	zincSearchAdapter := zincsearch.NewClient(a.httpClient)
 	indexerService := service.NewIndexerService(zincSearchAdapter)
 	indexerHandler := handler.NewIndexerHandler(indexerService, emailService)
 

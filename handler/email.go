@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -20,7 +21,7 @@ func NewEmailHandler(es EmailService) *EmailHandler {
 	}
 }
 
-type getAvailableUsers struct {
+type getAvailableUsersResponse struct {
 	Users []string `json:"users"`
 }
 
@@ -28,12 +29,11 @@ type getAvailableUsers struct {
 func (eh *EmailHandler) GetAvailableUsers(w http.ResponseWriter, r *http.Request) {
 	records, err := eh.emailService.GetAvailableUsers()
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.JSON(w, r, NewErrResponse(err))
+		NewErrResponse(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
-	response := &getAvailableUsers{
+	response := &getAvailableUsersResponse{
 		Users: records,
 	}
 
@@ -50,6 +50,7 @@ func (eh *EmailHandler) GetEmailsFromUser(w http.ResponseWriter, r *http.Request
 
 	records, err := eh.emailService.ExtrackEmailsFromUser(userID)
 	if err != nil {
+		NewErrResponse(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -60,21 +61,41 @@ func (eh *EmailHandler) GetEmailsFromUser(w http.ResponseWriter, r *http.Request
 	render.JSON(w, r, response)
 }
 
+// SearchInEmailsResponse is the response for the SearchInEmails method
+// TODO: Map response
+type SearchInEmailsResponse struct {
+	Emails []domain.Email `json:"emails"`
+}
+
+// SearchInEmails is the method that searches in the emails
+func (eh *EmailHandler) SearchInEmails(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	term := query.Get("q")
+
+	fmt.Println("term: ", term)
+
+	records, err := eh.emailService.SearchInEmails(domain.EmailIndexName, term)
+	if err != nil {
+		NewErrResponse(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	render.JSON(w, r, records)
+}
+
 // ErrResponse is the response for the errors
 type ErrResponse struct {
-	Err            error `json:"-"` // low-level runtime error
-	HTTPStatusCode int   `json:"-"` // http response status code
-
-	StatusText string `json:"status"`          // user-level status message
-	ErrorText  string `json:"error,omitempty"` // application-level error message, for debugging
+	Status    int    `json:"status"`          // user-level status message
+	ErrorText string `json:"error,omitempty"` // application-level error message, for debugging
 }
 
 // NewErrResponse is the method that creates a new ErrResponse
-func NewErrResponse(err error) *ErrResponse {
-	return &ErrResponse{
-		Err:            err,
-		HTTPStatusCode: 500,
-		StatusText:     "Internal Server Error",
-		ErrorText:      err.Error(),
+func NewErrResponse(w http.ResponseWriter, r *http.Request, statusCode int, err error) {
+	errReponse := &ErrResponse{
+		Status:    statusCode,
+		ErrorText: err.Error(),
 	}
+
+	render.Status(r, statusCode)
+	render.JSON(w, r, errReponse)
 }

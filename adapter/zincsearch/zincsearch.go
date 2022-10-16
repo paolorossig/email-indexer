@@ -70,3 +70,27 @@ func (c *Client) CreateDocuments(indexName string, records interface{}) (*Create
 
 	return response, nil
 }
+
+// SearchDocuments searches documents with the Search ZincSearch API
+func (c *Client) SearchDocuments(indexName string, body SearchDocumentsRequest) (*SearchDocumentsResponse, error) {
+	response := &SearchDocumentsResponse{}
+	apiError := &ErrorReponse{}
+
+	path := fmt.Sprintf("/api/%s/_search", indexName)
+
+	req, err := c.adapter.BuildRequest(http.MethodPost, path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.adapter.Sling.Do(req, response, apiError)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Error searching documents: %s", apiError.ErrorMessage)
+	}
+
+	return response, nil
+}

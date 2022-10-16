@@ -28,7 +28,7 @@ func indexerRouter(a *App) chi.Router {
 
 func emailsRouter(a *App) chi.Router {
 	r := chi.NewRouter()
-	// r.Get("/", a.dependencies.emailHandler.GetEmails)
+	r.Get("/search", a.dependencies.emailHandler.SearchInEmails)
 
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/", a.dependencies.emailHandler.GetAvailableUsers)

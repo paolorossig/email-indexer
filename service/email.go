@@ -7,20 +7,27 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/paolorossig/go-challenge/adapter/zincsearch"
 	"github.com/paolorossig/go-challenge/domain"
 )
 
 const (
 	emailDetailSeparator         = "\r\n"
 	emailDetailsContentSeparator = "\r\n\r\n"
+	defaultEmailSearchType       = "matchphrase"
+	defaultEmailMaxResults       = 5
 )
 
 // EmailService is the interface for the EmailService
-type EmailService struct{}
+type EmailService struct {
+	zincsearchAdapter ZincSearchAdapter
+}
 
 // NewEmailService creates a new EmailService
-func NewEmailService() *EmailService {
-	return &EmailService{}
+func NewEmailService(zsa ZincSearchAdapter) *EmailService {
+	return &EmailService{
+		zincsearchAdapter: zsa,
+	}
 }
 
 // GetAvailableUsers returns the User IDs available
@@ -122,4 +129,21 @@ func (es *EmailService) visitAndProcessEmailFiles(emails *[]domain.Email) filepa
 
 		return nil
 	}
+}
+
+// SearchInEmails searches in emails
+func (es *EmailService) SearchInEmails(indexName string, term string) (*zincsearch.SearchDocumentsResponse, error) {
+	body := zincsearch.SearchDocumentsRequest{
+		SearchType: defaultEmailSearchType,
+		Query: zincsearch.SearchDocumentsRequestQuery{
+			Term:      term,
+			StartTime: "2022-10-10T00:00:00.000Z",
+			EndTime:   "2022-10-30T00:00:00.000Z",
+		},
+		SortFields: []string{"-@timestamp"},
+		From:       0,
+		MaxResults: defaultEmailMaxResults,
+	}
+
+	return es.zincsearchAdapter.SearchDocuments(indexName, body)
 }

@@ -6,10 +6,7 @@ import (
 	"sync"
 
 	"github.com/go-chi/render"
-)
-
-const (
-	emailIndexName = "emails"
+	"github.com/paolorossig/go-challenge/domain"
 )
 
 // IndexerHandler is the handler for the Indexer requests
@@ -30,8 +27,7 @@ func NewIndexerHandler(is IndexerService, es EmailService) *IndexerHandler {
 func (ih *IndexerHandler) IndexEmails(w http.ResponseWriter, r *http.Request) {
 	userIDs, err := ih.emailService.GetAvailableUsers()
 	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.JSON(w, r, NewErrResponse(err))
+		NewErrResponse(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -55,7 +51,7 @@ func (ih *IndexerHandler) indexEmailByUserID(userID string, wg *sync.WaitGroup) 
 		return
 	}
 
-	if err := ih.indexerService.IndexEmails(emailIndexName, emailRecords); err != nil {
+	if err := ih.indexerService.IndexEmails(domain.EmailIndexName, emailRecords); err != nil {
 		log.Println("Error indexing emails from user: ", err)
 	}
 }
