@@ -1,11 +1,13 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/paolorossig/go-challenge/adapter/zincsearch"
 	"github.com/paolorossig/go-challenge/domain"
@@ -132,18 +134,48 @@ func (es *EmailService) visitAndProcessEmailFiles(emails *[]domain.Email) filepa
 }
 
 // SearchInEmails searches in emails
-func (es *EmailService) SearchInEmails(indexName string, term string) (*zincsearch.SearchDocumentsResponse, error) {
+func (es *EmailService) SearchInEmails(indexName string, term string) ([]domain.Email, error) {
+	now := time.Now()
+	startTime := now.AddDate(0, 0, -1).Format("2006-01-02T15:04:05Z")
+	endTime := now.Format("2006-01-02T15:04:05Z")
+
 	body := zincsearch.SearchDocumentsRequest{
 		SearchType: defaultEmailSearchType,
 		Query: zincsearch.SearchDocumentsRequestQuery{
 			Term:      term,
-			StartTime: "2022-10-10T00:00:00.000Z",
-			EndTime:   "2022-10-30T00:00:00.000Z",
+			StartTime: startTime,
+			EndTime:   endTime,
 		},
 		SortFields: []string{"-@timestamp"},
 		From:       0,
 		MaxResults: defaultEmailMaxResults,
 	}
 
-	return es.zincsearchAdapter.SearchDocuments(indexName, body)
+	response, err := es.zincsearchAdapter.SearchDocuments(indexName, body)
+	if err != nil {
+		log.Println("Error in SearchInEmails: ", err)
+		return nil, err
+	}
+
+	return mapZincSearchResponseToEmails(response), nil
+}
+
+func mapZincSearchResponseToEmails(response *zincsearch.SearchDocumentsResponse) []domain.Email {
+	var emails []domain.Email
+
+	for _, hit := range response.Hits.Hits {
+		var email domain.Email
+
+		emailBytes, _ := json.Marshal(hit.Source)
+
+		err := json.Unmarshal(emailBytes, &email)
+		if err != nil {
+			log.Println("Error in mapZincSearchResponseToEmails: ", err)
+			continue
+		}
+
+		emails = append(emails, email)
+	}
+
+	return emails
 }

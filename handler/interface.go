@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/paolorossig/go-challenge/adapter/zincsearch"
 	"github.com/paolorossig/go-challenge/domain"
 )
 
@@ -9,7 +8,7 @@ import (
 type EmailService interface {
 	GetAvailableUsers() ([]string, error)
 	ExtrackEmailsFromUser(userID string) ([]domain.Email, error)
-	SearchInEmails(indexName string, term string) (*zincsearch.SearchDocumentsResponse, error)
+	SearchInEmails(indexName string, term string) ([]domain.Email, error)
 }
 
 // IndexerService is the interface for the IndexerService

@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -62,7 +61,6 @@ func (eh *EmailHandler) GetEmailsFromUser(w http.ResponseWriter, r *http.Request
 }
 
 // SearchInEmailsResponse is the response for the SearchInEmails method
-// TODO: Map response
 type SearchInEmailsResponse struct {
 	Emails []domain.Email `json:"emails"`
 }
@@ -72,15 +70,17 @@ func (eh *EmailHandler) SearchInEmails(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	term := query.Get("q")
 
-	fmt.Println("term: ", term)
-
 	records, err := eh.emailService.SearchInEmails(domain.EmailIndexName, term)
 	if err != nil {
 		NewErrResponse(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
-	render.JSON(w, r, records)
+	response := &SearchInEmailsResponse{
+		Emails: records,
+	}
+
+	render.JSON(w, r, response)
 }
 
 // ErrResponse is the response for the errors
