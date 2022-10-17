@@ -1,6 +1,16 @@
+# compiled output
+dist
+tmp
+
+# dependencies
+node_modules
+vendor
+
+# System Files
 .DS_Store
-.vscode
-vendor/
-data/
-enron_mail_20110402/
-enron_mail_20110402.tgz
+
+# misc
+*.log
+gin-bin
+data
+enron_mail_20110402*

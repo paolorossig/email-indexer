@@ -1,0 +1,52 @@
+version: '3'
+services:
+  zinc:
+    image: public.ecr.aws/zinclabs/zinc:latest
+    environment:
+      - ZINC_FIRST_ADMIN_USER=${ZINC_FIRST_ADMIN_USER}
+      - ZINC_FIRST_ADMIN_PASSWORD=${ZINC_FIRST_ADMIN_PASSWORD}
+    ports:
+      - '4080:4080'
+    volumes:
+      - ./zinc:/var/lib/zinc
+    networks:
+      - monorepo_net
+  api:
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+      args:
+        project: ./cmd/api
+    environment:
+      - PORT=3000
+      - APP_NAME=email-indexer-api
+      - ZINCSEARCH_HOST=http://zinc:4080
+      - ZINC_FIRST_ADMIN_USER=${ZINC_FIRST_ADMIN_USER}
+      - ZINC_FIRST_ADMIN_PASSWORD=${ZINC_FIRST_ADMIN_PASSWORD}
+    ports:
+      - 8000:3000
+    depends_on:
+      - zinc
+    restart: on-failure
+    volumes:
+      - ./server:/usr/src/app
+    networks:
+      - monorepo_net
+  web:
+    build:
+      context: ./client
+      dockerfile: ./Dockerfile
+    environment:
+      - API_HOST=http://api:3000
+    ports:
+      - 8080:8080
+    restart: on-failure
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - monorepo_net
+
+networks:
+  monorepo_net:
+    driver: bridge

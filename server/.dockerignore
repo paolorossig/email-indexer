@@ -1,0 +1,6 @@
+Dockerfile*
+README.md
+.dockerignore
+.git
+.gitignore
+enron_mail_20110402*
