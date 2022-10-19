@@ -2,7 +2,11 @@
 
 **`email-indexer`** is a fullstack application that can index and search emails details and content within seconds.
 
-It has a monorepo structure and was developed following some principles of hexagonal architecture
+It has a monorepo structure and was developed following some principles of hexagonal architecture.
+
+|                       Web version                       |                        Mobile version                         |
+| :-----------------------------------------------------: | :-----------------------------------------------------------: |
+| ![Deepsearch-web](./images/deepsearch-web.png?raw=true) | ![Deepsearch-mobile](./images/deepsearch-mobile.png?raw=true) |
 
 ## Tech Stack
 
