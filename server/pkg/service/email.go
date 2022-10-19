@@ -136,7 +136,7 @@ func (es *EmailService) visitAndProcessEmailFiles(emails *[]domain.Email) filepa
 // SearchInEmails searches in emails
 func (es *EmailService) SearchInEmails(indexName string, term string) ([]domain.Email, error) {
 	now := time.Now()
-	startTime := now.AddDate(0, 0, -1).Format("2006-01-02T15:04:05Z")
+	startTime := now.AddDate(0, 0, -7).Format("2006-01-02T15:04:05Z")
 	endTime := now.Format("2006-01-02T15:04:05Z")
 
 	body := zincsearch.SearchDocumentsRequest{
